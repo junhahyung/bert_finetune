@@ -380,7 +380,7 @@ class KsaProcessor(DataProcessor):
     """See base class."""
     train_dir = os.path.join(data_dir, "korean_train.csv")
     with tf.gfile.Open(train_dir, "r") as f:
-        reader = csv.reader(f, delimiter=",", quotechar=None)
+        reader = csv.reader(f, dialect='excel')
         lines = []
         for line in reader:
             lines.append(line)
@@ -401,7 +401,7 @@ class KsaProcessor(DataProcessor):
     """See base class."""
     dev_dir = os.path.join(data_dir, "korean_dev.csv")
     with tf.gfile.Open(dev_dir, "r") as f:
-        reader = csv.reader(f, delimiter=",", quotechar=None)
+        reader = csv.reader(f, dialect='excel')
         lines = []
         for line in reader:
             lines.append(line)
@@ -419,7 +419,7 @@ class KsaProcessor(DataProcessor):
     """See base class."""
     test_dir = os.path.join(data_dir, "korean_test.csv")
     with tf.gfile.Open(dev_dir, "r") as f:
-        reader = csv.reader(f, delimiter=",", quotechar=None)
+        reader = csv.reader(f, dialect='excel')
         lines = []
         for line in reader:
             lines.append(line)
