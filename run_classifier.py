@@ -378,40 +378,61 @@ class KsaProcessor(DataProcessor):
 
   def get_train_examples(self, data_dir):
     """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+    train_dir = os.path.join(data_dir, "korean_train.csv")
+    with tf.gfile.Open(train_dir, "r") as f:
+        reader = csv.reader(f, delimiter=",", quotechar=None)
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "train-%d" % (i)
+        text_a = tokenization.convert_to_unicode(line[2])
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
 
   def get_dev_examples(self, data_dir):
     """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+    dev_dir = os.path.join(data_dir, "korean_dev.csv")
+    with tf.gfile.Open(dev_dir, "r") as f:
+        reader = csv.reader(f, delimiter=",", quotechar=None)
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "dev-%d" % (i)
+        text_a = tokenization.convert_to_unicode(line[2])
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
 
   def get_test_examples(self, data_dir):
     """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
+    test_dir = os.path.join(data_dir, "korean_test.csv")
+    with tf.gfile.Open(dev_dir, "r") as f:
+        reader = csv.reader(f, delimiter=",", quotechar=None)
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "test-%d" % (i)
+        text_a = tokenization.convert_to_unicode(line[2])
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
 
   def get_labels(self):
     """See base class."""
     return ["0", "1", "2", "3", "4", "5", "6"]
-
-  def _create_examples(self, lines, set_type):
-    """Creates examples for the training and dev sets."""
-    examples = []
-    for (i, line) in enumerate(lines):
-      # Only the test set has a header
-      if set_type == "test" and i == 0:
-        continue
-      guid = "%s-%s" % (set_type, i)
-      if set_type == "test":
-        text_a = tokenization.convert_to_unicode(line[1])
-        label = "0"
-      else:
-        text_a = tokenization.convert_to_unicode(line[3])
-        label = tokenization.convert_to_unicode(line[1])
-      examples.append(
-          InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-    return examples
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
