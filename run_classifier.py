@@ -418,7 +418,7 @@ class KsaProcessor(DataProcessor):
   def get_test_examples(self, data_dir):
     """See base class."""
     test_dir = os.path.join(data_dir, "korean_test.csv")
-    with tf.gfile.Open(data_dir, "r") as f:
+    with tf.gfile.Open(test_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
         lines = []
         for line in reader:
