@@ -22,7 +22,7 @@ import re
 import tensorflow as tf
 
 
-def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu):
+def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, layer_wise_lr=None):
   """Creates an optimizer training op."""
   global_step = tf.train.get_or_create_global_step()
 
@@ -74,7 +74,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu):
   (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
 
   train_op = optimizer.apply_gradients(
-      zip(grads, tvars), global_step=global_step)
+      zip(grads, tvars), global_step=global_step, layer_wise_lr)
 
   # Normally the global step update is done inside of `apply_gradients`.
   # However, `AdamWeightDecayOptimizer` doesn't do this. But if you use
@@ -105,7 +105,7 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
     self.epsilon = epsilon
     self.exclude_from_weight_decay = exclude_from_weight_decay
 
-  def apply_gradients(self, grads_and_vars, global_step=None, name=None):
+  def apply_gradients(self, grads_and_vars, global_step=None, name=None, layer_wise_lr=None):
     """See base class."""
     assignments = []
     for (grad, param) in grads_and_vars:
@@ -147,6 +147,19 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
         update += self.weight_decay_rate * param
 
       update_with_lr = self.learning_rate * update
+      
+      # modified by junha, for different learning rates for different layers
+      # implemented for bert base model with 12 attention layers
+      if layer_wise_lr:
+          layer_wise_lr, base_rate = layer_wise_lr 
+          if layer_wise_lr:
+              for idx in range(12):
+                layer =  "layer_%d" % (idx) 
+                if layer in param.name:
+                    update_with_lr = base_rate * update_with_lr + (1-base_rate) * update_with_lr * (idx+1) / float(12)
+                    break
+          else:
+              pass
 
       next_param = param - update_with_lr
 

@@ -85,7 +85,7 @@ def create_model(is_training, input_ids, input_mask, segment_ids, labels,
 
 
 def model_fn_builder(num_labels, learning_rate, num_train_steps,
-                     num_warmup_steps, use_tpu, bert_hub_module_handle):
+                     num_warmup_steps, use_tpu, bert_hub_module_handle, layer_wise_lr=None):
   """Returns `model_fn` closure for TPUEstimator."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -109,7 +109,7 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
       train_op = optimization.create_optimizer(
-          total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
+          total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu, layer_wise_lr)
 
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
