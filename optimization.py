@@ -62,7 +62,8 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, 
       beta_1=0.9,
       beta_2=0.999,
       epsilon=1e-6,
-      exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
+      exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"],
+      layer_wise_lr=layer_wise_lr)
 
   if use_tpu:
     optimizer = tf.contrib.tpu.CrossShardOptimizer(optimizer)
@@ -74,7 +75,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, 
   (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
 
   train_op = optimizer.apply_gradients(
-      zip(grads, tvars), layer_wise_lr=layer_wise_lr, global_step=global_step)
+      zip(grads, tvars), global_step=global_step)
 
   # Normally the global step update is done inside of `apply_gradients`.
   # However, `AdamWeightDecayOptimizer` doesn't do this. But if you use
@@ -94,6 +95,7 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
                beta_2=0.999,
                epsilon=1e-6,
                exclude_from_weight_decay=None,
+               layer_wise_lr=None,
                name="AdamWeightDecayOptimizer"):
     """Constructs a AdamWeightDecayOptimizer."""
     super(AdamWeightDecayOptimizer, self).__init__(False, name)
@@ -104,8 +106,9 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
     self.beta_2 = beta_2
     self.epsilon = epsilon
     self.exclude_from_weight_decay = exclude_from_weight_decay
+    self.layer_wise_lr = layer_wise_lr
 
-  def apply_gradients(self, grads_and_vars, layer_wise_lr=None, global_step=None, name=None):
+  def apply_gradients(self, grads_and_vars, global_step=None, name=None):
     """See base class."""
     assignments = []
     for (grad, param) in grads_and_vars:
@@ -150,8 +153,8 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
       
       # modified by junha, for different learning rates for different layers
       # implemented for bert base model with 12 attention layers
-      if layer_wise_lr:
-          layer_wise_lr, base_rate = layer_wise_lr 
+      if self.layer_wise_lr:
+          layer_wise_lr, base_rate = self.layer_wise_lr 
           if layer_wise_lr:
               for idx in range(12):
                 layer =  "layer_%d" % (idx) 
