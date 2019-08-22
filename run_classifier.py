@@ -435,7 +435,7 @@ class KsaProcessor(DataProcessor):
 
   def get_labels(self):
     """See base class."""
-    return ["0", "1", "2", "3", "4", "5", "6"]
+    return ["0", "1", "2", "3"]
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
