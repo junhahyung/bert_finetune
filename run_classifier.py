@@ -437,6 +437,70 @@ class KsaProcessor(DataProcessor):
     """See base class."""
     return ["0", "1", "2", "3"]
 
+class EmoProcessor(DataProcessor):
+  """Processor for the fine-grained emotion analysis (Korean) data set (modified by Junha Hyung)."""
+
+  def get_train_examples(self, data_dir):
+    """See base class."""
+    train_dir = os.path.join(data_dir, "train.csv")
+    with tf.gfile.Open(train_dir, "r") as f:
+        reader = csv.reader(f, dialect='excel')
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "train-%d" % (i)
+        try:
+            text_a = tokenization.convert_to_unicode(line[2])
+        except:
+            print("{}, {}".format(i, line))
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
+  def get_dev_examples(self, data_dir):
+    """See base class."""
+    dev_dir = os.path.join(data_dir, "dev.csv")
+    with tf.gfile.Open(dev_dir, "r") as f:
+        reader = csv.reader(f, dialect='excel')
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "dev-%d" % (i)
+        text_a = tokenization.convert_to_unicode(line[2])
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
+  def get_test_examples(self, data_dir):
+    """See base class."""
+    test_dir = os.path.join(data_dir, "test.csv")
+    with tf.gfile.Open(test_dir, "r") as f:
+        reader = csv.reader(f, dialect='excel')
+        lines = []
+        for line in reader:
+            lines.append(line)
+    examples = []
+    for (i, line) in enumerate(lines):
+        if i == 0:
+            continue
+        guid = "test-%d" % (i)
+        text_a = tokenization.convert_to_unicode(line[2])
+        label = tokenization.convert_to_unicode(line[1])
+        examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
+  def get_labels(self):
+    """See base class."""
+    return ["0", "1", "2", "3"]
+
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
   """Converts a single `InputExample` into a single `InputFeatures`."""
