@@ -699,7 +699,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
-                 labels, num_labels, use_one_hot_embeddings):
+                 labels, num_labels, use_one_hot_embeddings, use_all_layers=False):
   """Creates a classification model."""
   model = modeling.BertModel(
       config=bert_config,
@@ -709,43 +709,103 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
       token_type_ids=segment_ids,
       use_one_hot_embeddings=use_one_hot_embeddings)
 
+  """junha change"""
+  """use all layers"""
+  if use_all_layers:
+      all_layers = model.get_all_encoder_layers()
+      all_pooler_output = []
+      for layer_output in all_layers:
+          layer_output = tf.squeeze(layer_output[:,0:1,:], axis=1)
+          all_pooler_output.append(layer_output)
+
+      num_layers = len(all_layers)
+      hidden_size = all_pooler_output[-1].shape[1]
+      batch_size = all_pooler_output[-1].shape[0]
+      num_attention_heads = 12
+      attention_head_size = int(hidden_size / num_attention_heads)
+      all_pooler_output = tf.convert_to_tensor(all_pooler_output)
+      all_pooler_output = tf.transpose(all_pooler_output, [1,0,2])
+      if is_training:
+          attention_probs_dropout_prob=0.1
+      else:
+          attention_probs_dropout_prob=0.0
+
+      with tf.variable_scope("junha-final-attention"):
+          attention_head = modeling.attention_layer(
+                  from_tensor=all_pooler_output,
+                  to_tensor=all_pooler_output,
+                  num_attention_heads=num_attention_heads,
+                  size_per_head=attention_head_size,
+                  attention_probs_dropout_prob=attention_probs_dropout_prob,
+                  initializer_range=0.02,
+                  batch_size=batch_size,
+                  from_seq_length=num_layers,
+                  to_seq_length=num_layers)
+                  
+      output_layer = tf.reshape(attention_head, [-1, num_layers * hidden_size])
+
+      output_weights = tf.get_variable(
+        "output_weights", [num_labels, num_layers * hidden_size],
+        initializer=tf.truncated_normal_initializer(stddev=0.02))
+
+      output_bias = tf.get_variable(
+        "output_bias", [num_labels], initializer=tf.zeros_initializer())
+
+      with tf.variable_scope("loss"):
+        if is_training:
+          # I.e., 0.1 dropout
+          output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+
+        logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+
+        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss = tf.reduce_mean(per_example_loss)
+
+        return (loss, per_example_loss, logits, probabilities)
+
   # In the demo, we are doing a simple classification task on the entire
   # segment.
   #
   # If you want to use the token-level output, use model.get_sequence_output()
   # instead.
-  output_layer = model.get_pooled_output()
+  else:
+      output_layer = model.get_pooled_output()
 
-  hidden_size = output_layer.shape[-1].value
+      hidden_size = output_layer.shape[-1].value
 
-  output_weights = tf.get_variable(
-      "output_weights", [num_labels, hidden_size],
-      initializer=tf.truncated_normal_initializer(stddev=0.02))
+      output_weights = tf.get_variable(
+          "output_weights", [num_labels, hidden_size],
+          initializer=tf.truncated_normal_initializer(stddev=0.02))
 
-  output_bias = tf.get_variable(
-      "output_bias", [num_labels], initializer=tf.zeros_initializer())
+      output_bias = tf.get_variable(
+          "output_bias", [num_labels], initializer=tf.zeros_initializer())
 
-  with tf.variable_scope("loss"):
-    if is_training:
-      # I.e., 0.1 dropout
-      output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+      with tf.variable_scope("loss"):
+        if is_training:
+          # I.e., 0.1 dropout
+          output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
 
-    logits = tf.matmul(output_layer, output_weights, transpose_b=True)
-    logits = tf.nn.bias_add(logits, output_bias)
-    probabilities = tf.nn.softmax(logits, axis=-1)
-    log_probs = tf.nn.log_softmax(logits, axis=-1)
+        logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
 
-    one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-    per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-    loss = tf.reduce_mean(per_example_loss)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        loss = tf.reduce_mean(per_example_loss)
 
-    return (loss, per_example_loss, logits, probabilities)
+        return (loss, per_example_loss, logits, probabilities)
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
-                     use_one_hot_embeddings):
+                     use_one_hot_embeddings, use_all_layers=False):
   """Returns `model_fn` closure for TPUEstimator."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -769,7 +829,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
     (total_loss, per_example_loss, logits, probabilities) = create_model(
         bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
-        num_labels, use_one_hot_embeddings)
+        num_labels, use_one_hot_embeddings, use_all_layers)
 
     tvars = tf.trainable_variables()
     initialized_variable_names = {}
