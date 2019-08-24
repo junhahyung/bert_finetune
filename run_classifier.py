@@ -719,8 +719,9 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
           all_pooler_output.append(layer_output)
 
       num_layers = len(all_layers)
-      hidden_size = all_pooler_output[-1].shape[1]
-      batch_size = all_pooler_output[-1].shape[0]
+      input_shape= modeling.get_shape_list(all_pooler_output[-1], expected_rank=2)
+      hidden_size = input_shape[1]
+      batch_size = input_shape[0]
       num_attention_heads = 12
       attention_head_size = int(hidden_size / num_attention_heads)
       all_pooler_output = tf.convert_to_tensor(all_pooler_output)
