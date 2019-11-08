@@ -874,9 +874,11 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
+        confusion_matrix = tf.math.confusion_matrix(label_ids, predictions)
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
+            "confusion_matrix": confusion_matrix
         }
 
       eval_metrics = (metric_fn,
