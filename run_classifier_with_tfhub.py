@@ -174,12 +174,18 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         #confusion_matrix = streamingConfusionMatrix(label_ids, predictions, weights=None, num_classes=logits.shape[-1])
         n = logits.shape[-1]
         recall = [0] * n
+        precision = [0] * n
         update_op_rec = [[]] * n
+        update_op_pre = [[]] * n
 
         for k in range(n):
             recall[k], update_op_rec[k] = tf.metrics.recall(
                 labels=tf.equal(label_ids, k),
                 predictions=tf.equal(predictions, k)
+            )
+            precision[k], update_op_pre[k] = tf.metrics.precision(
+                    labels=tf.equal(label_ids, k),
+                    predictions=tf.equal(predictions, k)
             )
 
         return {
@@ -188,7 +194,11 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
             "recall0": (recall[0], update_op_rec[0]),
             "recall1": (recall[1], update_op_rec[1]),
             "recall2": (recall[2], update_op_rec[2]),
-            "recall3": (recall[3], update_op_rec[3])
+            "recall3": (recall[3], update_op_rec[3]),
+            "precision0": (precision[0], update_op_pre[0]),
+            "precision1": (precision[1], update_op_pre[1]),
+            "precision2": (precision[2], update_op_pre[2]),
+            "precision3": (precision[3], update_op_pre[3])
             }
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
