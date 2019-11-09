@@ -171,12 +171,11 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         accuracy = tf.metrics.accuracy(label_ids, predictions)
         loss = tf.metrics.mean(per_example_loss)
-        confusion_matrix = streamingConfusionMatrix(label_ids, predictions, weights=None, num_classes=logits.shape[-1])
+        #confusion_matrix = streamingConfusionMatrix(label_ids, predictions, weights=None, num_classes=logits.shape[-1])
 
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "confusion_matrix": confusion_matrix
             }
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
