@@ -173,9 +173,22 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         loss = tf.metrics.mean(per_example_loss)
         #confusion_matrix = streamingConfusionMatrix(label_ids, predictions, weights=None, num_classes=logits.shape[-1])
 
+        recall = [0] * n
+        update_op_rec = [[]] * n
+
+        for k in range(n):
+            recall[k], update_op_rec[k] = tf.metrics.recall(
+                labels=tf.equal(y_true, k),
+                predictions=tf.equal(y_pred, k)
+            )
+
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
+            "recall0": (recall[0], update_op_rec[0]),
+            "recall1": (recall[1], update_op_rec[1]),
+            "recall2": (recall[2], update_op_rec[2]),
+            "recall3": (recall[3], update_op_rec[3])
             }
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
