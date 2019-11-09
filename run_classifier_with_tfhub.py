@@ -25,6 +25,10 @@ import tokenization
 import tensorflow as tf
 import tensorflow_hub as hub
 
+from tensorflow.python.framework import ops,dtypes
+from tensorflow.python.ops import array_ops,variables
+from tensorflow.contrib import learn
+
 flags = tf.flags
 
 FLAGS = flags.FLAGS
@@ -84,6 +88,52 @@ def create_model(is_training, input_ids, input_mask, segment_ids, labels,
     return (loss, per_example_loss, logits, probabilities)
 
 
+def _createLocalVariable(name, shape, collections=None,
+validate_shape=True,
+              dtype=dtypes.float32):
+  """Creates a new local variable.
+  """
+  # Make sure local variables are added to
+  # tf.GraphKeys.LOCAL_VARIABLES
+  collections = list(collections or [])
+  collections += [ops.GraphKeys.LOCAL_VARIABLES]
+  return variables.Variable(
+  initial_value=array_ops.zeros(shape, dtype=dtype),
+  name=name,
+  trainable=False,
+  collections=collections,
+  validate_shape=validate_shape)
+
+def streamingConfusionMatrix(label, prediction,
+weights=None,num_classes=None):
+  """
+  Compute a streaming confusion matrix
+  :param label: True labels
+  :param prediction: Predicted labels
+  :param weights: (Optional) weights (unused)
+  :param num_classes: Number of labels for the confusion matrix
+  :return: (percentConfusionMatrix,updateOp)
+  """
+  # Compute a per-batch confusion
+
+  batch_confusion = tf.confusion_matrix(label, prediction,
+                                    num_classes=num_classes,
+                                    name='batch_confusion')
+
+  count = _createLocalVariable(None,(),dtype=tf.int32)
+  confusion = _createLocalVariable('streamConfusion',[num_classes,
+  num_classes],dtype=tf.int32)
+
+  # Create the update op for doing a "+=" accumulation on the batch
+  countUpdate = count.assign(count + tf.reduce_sum(batch_confusion))
+  confusionUpdate = confusion.assign(confusion + batch_confusion)
+
+  updateOp = tf.group(confusionUpdate,countUpdate)
+
+  percentConfusion = 100 * tf.truediv(confusion,count)
+
+  return percentConfusion,updateOp
+
 def model_fn_builder(num_labels, learning_rate, num_train_steps,
                      num_warmup_steps, use_tpu, bert_hub_module_handle, layer_wise_lr=None):
   """Returns `model_fn` closure for TPUEstimator."""
@@ -121,13 +171,11 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         accuracy = tf.metrics.accuracy(label_ids, predictions)
         loss = tf.metrics.mean(per_example_loss)
-        confusion_matrix = tf.math.confusion_matrix(label_ids, predictions)
 
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "confusion_matrix": confusion_matrix 
-        }
+            "confusion_matrix": learn.MetricSpec(metric_fn=lambda label,prediction,weights=None: streamingConfusionMatrix(label_ids, predictions, weights, num_classes=len(logits[-1])))}
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
