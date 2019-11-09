@@ -178,8 +178,8 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
 
         for k in range(n):
             recall[k], update_op_rec[k] = tf.metrics.recall(
-                labels=tf.equal(y_true, k),
-                predictions=tf.equal(y_pred, k)
+                labels=tf.equal(label_ids, k),
+                predictions=tf.equal(predictions, k)
             )
 
         return {
