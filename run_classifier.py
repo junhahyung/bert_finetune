@@ -532,6 +532,7 @@ class PAWSXProcessor(DataProcessor):
             print("{}, {}".format(i, line))
         label = tokenization.convert_to_unicode(line[4])
         examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+    print("length of examples : %d" % len(examples))
     return examples
 
   def get_dev_examples(self, data_dir):
