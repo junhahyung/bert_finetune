@@ -379,11 +379,13 @@ class KsaProcessor(DataProcessor):
   def get_train_examples(self, data_dir, _type=None):
     """See base class."""
     if not _type:
-        train_dir = os.path.join(data_dir, "final_train_multi.csv")
+        train_dir = os.path.join(data_dir, "final_train_multi_shuffle.csv")
     if _type == 'NAVER_ADDED_ORIGINAL':
-        train_dir = os.path.join(data_dir, "final_train_original_naver_multi.csv")
+        train_dir = os.path.join(data_dir, "final_train_original_naver_multi_shuffle.csv")
     if _type == 'NAVER_ADDED_REVISED':
-        train_dir = os.path.join(data_dir, "final_train_revised_naver_multi.csv")
+        train_dir = os.path.join(data_dir, "final_train_revised_naver_multi_shuffle.csv")
+    if _type == 'TOY':
+        train_dir = os.path.join(data_dir, "toy_train.csv")
 
     with tf.gfile.Open(train_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
@@ -405,7 +407,7 @@ class KsaProcessor(DataProcessor):
 
   def get_dev_examples(self, data_dir):
     """See base class."""
-    dev_dir = os.path.join(data_dir, "final_test_multi.csv")
+    dev_dir = os.path.join(data_dir, "final_test_multi_shuffle.csv")
     with tf.gfile.Open(dev_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
         lines = []
