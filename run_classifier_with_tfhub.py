@@ -175,6 +175,7 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         n = logits.shape[-1]
         recall = [0] * n
         precision = [0] * n
+        f1 = [0] * n
         update_op_rec = [[]] * n
         update_op_pre = [[]] * n
 
@@ -191,14 +192,16 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "recall0": (recall[0], update_op_rec[0]),
-            "recall1": (recall[1], update_op_rec[1]),
-            "recall2": (recall[2], update_op_rec[2]),
-            "recall3": (recall[3], update_op_rec[3]),
-            "precision0": (precision[0], update_op_pre[0]),
-            "precision1": (precision[1], update_op_pre[1]),
-            "precision2": (precision[2], update_op_pre[2]),
-            "precision3": (precision[3], update_op_pre[3])
+            "neutral_recall": (recall[0], update_op_rec[0]),
+            "happy_recall": (recall[1], update_op_rec[1]),
+            "sad_recall": (recall[2], update_op_rec[2]),
+            "anger_recall": (recall[3], update_op_rec[3]),
+            "surprised_recall": (recall[4], update_op_rec[4]),
+            "neutral_precision": (precision[0], update_op_pre[0]),
+            "happy_precision": (precision[1], update_op_pre[1]),
+            "sad_precision": (precision[2], update_op_pre[2]),
+            "anger_precision": (precision[3], update_op_pre[3]),
+            "surprised_precision": (precision[4], update_op_pre[4])
             }
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])

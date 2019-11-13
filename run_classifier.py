@@ -376,9 +376,15 @@ class ColaProcessor(DataProcessor):
 class KsaProcessor(DataProcessor):
   """Processor for the fine-grained emotion analysis (Korean) data set (modified by Junha Hyung)."""
 
-  def get_train_examples(self, data_dir):
+  def get_train_examples(self, data_dir, _type=None):
     """See base class."""
-    train_dir = os.path.join(data_dir, "korean_train.csv")
+    if not _type:
+        train_dir = os.path.join(data_dir, "final_train_multi.csv")
+    if _type == 'NAVER_ADDED_ORIGINAL':
+        train_dir = os.path.join(data_dir, "final_train_original_naver_multi.csv")
+    if _type == 'NAVER_ADDED_REVISED':
+        train_dir = os.path.join(data_dir, "final_train_revised_naver_multi.csv")
+
     with tf.gfile.Open(train_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
         lines = []
@@ -399,7 +405,7 @@ class KsaProcessor(DataProcessor):
 
   def get_dev_examples(self, data_dir):
     """See base class."""
-    dev_dir = os.path.join(data_dir, "korean_dev.csv")
+    dev_dir = os.path.join(data_dir, "final_test_multi.csv")
     with tf.gfile.Open(dev_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
         lines = []
@@ -435,7 +441,7 @@ class KsaProcessor(DataProcessor):
 
   def get_labels(self):
     """See base class."""
-    return ["0", "1", "2", "3"]
+    return ["0", "1", "2", "3", "4"]
 
 class EmoProcessor(DataProcessor):
   """Processor for the fine-grained emotion analysis (Korean) data set (modified by Junha Hyung)."""
@@ -874,12 +880,35 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
+        n = logits.shape[-1]
+        recall = [0] * n
+        precision = [0] * n
+        update_op_rec = [[]] * n
+        update_op_pre = [[]] * n
 
-        confusion_matrix = tf.math.confusion_matrix(label_ids, predictions)
+        for k in range(n):
+            recall[k], update_op_rec[k] = tf.metrics.recall(
+                labels=tf.equal(label_ids, k),
+                predictions=tf.equal(predictions, k)
+            )
+            precision[k], update_op_pre[k] = tf.metrics.precision(
+                labels=tf.equal(label_ids, k),
+                predictions=tf.equal(predictions, k)
+            )
+
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "confusion_matrix": confusion_matrix
+            "nuetral_recall": (recall[0], update_op_rec[0]),
+            "happy_recall": (recall[1], update_op_rec[1]),
+            "sad_recall": (recall[2], update_op_rec[2]),
+            "anger_recall": (recall[3], update_op_rec[3]),
+            "surprised_recall": (recall[4], update_op_rec[4]),
+            "neutral_precision": (precision[0], update_op_pre[0]),
+            "happy_precision": (precision[1], update_op_pre[1]),
+            "sad_precision": (precision[2], update_op_pre[2]),
+            "anger_precision": (precision[3], update_op_pre[3]),
+            "surprised_precision": (precision[4], update_op_pre[4])
         }
 
       eval_metrics = (metric_fn,
