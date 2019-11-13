@@ -379,11 +379,11 @@ class KsaProcessor(DataProcessor):
   def get_train_examples(self, data_dir, _type=None):
     """See base class."""
     if not _type:
-        train_dir = os.path.join(data_dir, "final_train_multi_shuffle.csv")
+        train_dir = os.path.join(data_dir, "shuffle_new_final_train_multi.csv")
     if _type == 'NAVER_ADDED_ORIGINAL':
-        train_dir = os.path.join(data_dir, "final_train_original_naver_multi_shuffle.csv")
+        train_dir = os.path.join(data_dir, "shuffle_new_final_train_original_naver_multi.csv")
     if _type == 'NAVER_ADDED_REVISED':
-        train_dir = os.path.join(data_dir, "final_train_revised_naver_multi_shuffle.csv")
+        train_dir = os.path.join(data_dir, "shuffle_new_final_train_revised_naver_multi.csv")
     if _type == 'TOY':
         train_dir = os.path.join(data_dir, "toy_train.csv")
 
@@ -407,7 +407,7 @@ class KsaProcessor(DataProcessor):
 
   def get_dev_examples(self, data_dir):
     """See base class."""
-    dev_dir = os.path.join(data_dir, "final_test_multi_shuffle.csv")
+    dev_dir = os.path.join(data_dir, "shuffle_new_final_test_multi.csv")
     with tf.gfile.Open(dev_dir, "r") as f:
         reader = csv.reader(f, dialect='excel')
         lines = []
@@ -510,7 +510,7 @@ class EmoProcessor(DataProcessor):
     return ["0", "1", "2", "3"]
 
 class PAWSXProcessor(DataProcessor):
-  """Processor for the MRPC data set (GLUE version)."""
+  """Processor for the Korean PAWSX."""
 
   def get_train_examples(self, data_dir):
     """See base class."""
