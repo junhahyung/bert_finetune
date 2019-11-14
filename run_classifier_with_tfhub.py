@@ -188,8 +188,8 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
                     labels=tf.equal(label_ids, k),
                     predictions=tf.equal(predictions, k)
             )
-
-        return {
+        if n >= 5:
+            result = {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
             "neutral_recall": (recall[0], update_op_rec[0]),
@@ -203,6 +203,13 @@ def model_fn_builder(num_labels, learning_rate, num_train_steps,
             "anger_precision": (precision[3], update_op_pre[3]),
             "surprised_precision": (precision[4], update_op_pre[4])
             }
+        else:
+            result = {
+            "eval_accuracy": accuracy,
+            "eval_loss": loss
+            }
+
+        return result
 
       eval_metrics = (metric_fn, [per_example_loss, label_ids, logits])
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
