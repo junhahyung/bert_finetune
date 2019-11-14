@@ -977,7 +977,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "nuetral_recall": (recall[0], update_op_rec[0]),
+            "neutral_recall": (recall[0], update_op_rec[0]),
             "happy_recall": (recall[1], update_op_rec[1]),
             "sad_recall": (recall[2], update_op_rec[2]),
             "anger_recall": (recall[3], update_op_rec[3]),
