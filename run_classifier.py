@@ -384,6 +384,9 @@ class KsaProcessor(DataProcessor):
         train_dir = os.path.join(data_dir, "shuffle_new_final_train_original_naver_multi.csv")
     if _type == 'NAVER_ADDED_REVISED':
         train_dir = os.path.join(data_dir, "shuffle_new_final_train_revised_naver_multi.csv")
+    if _type == 'PARAPHRASE_ADDED':
+        train_dir = os.path.join(data_dir, "final_with_paraphrasing.csv")
+
     if _type == 'TOY':
         train_dir = os.path.join(data_dir, "toy_train.csv")
 
