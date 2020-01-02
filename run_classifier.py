@@ -977,16 +977,16 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "neutral_recall": (recall[0], update_op_rec[0]),
-            "happy_recall": (recall[1], update_op_rec[1]),
-            "sad_recall": (recall[2], update_op_rec[2]),
-            "anger_recall": (recall[3], update_op_rec[3]),
-            "surprised_recall": (recall[4], update_op_rec[4]),
-            "neutral_precision": (precision[0], update_op_pre[0]),
-            "happy_precision": (precision[1], update_op_pre[1]),
-            "sad_precision": (precision[2], update_op_pre[2]),
-            "anger_precision": (precision[3], update_op_pre[3]),
-            "surprised_precision": (precision[4], update_op_pre[4])
+            #"neutral_recall": (recall[0], update_op_rec[0]),
+            #"happy_recall": (recall[1], update_op_rec[1]),
+            #"sad_recall": (recall[2], update_op_rec[2]),
+            #"anger_recall": (recall[3], update_op_rec[3]),
+            #"surprised_recall": (recall[4], update_op_rec[4]),
+            #"neutral_precision": (precision[0], update_op_pre[0]),
+            #"happy_precision": (precision[1], update_op_pre[1]),
+            #"sad_precision": (precision[2], update_op_pre[2]),
+            #"anger_precision": (precision[3], update_op_pre[3]),
+            #"surprised_precision": (precision[4], update_op_pre[4])
         }
 
       eval_metrics = (metric_fn,
